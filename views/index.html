@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Booking App</title>
+</head>
+<body>
+  <h1>Booking Appointment</h1>
+
+  <form id="userForm">
+    <input type="hidden" id="editId">
+
+    <label>Name:</label>
+    <input type="text" id="username" required><br><br>
+
+    <label>Phone:</label>
+    <input type="text" id="phone" required><br><br>
+
+    <label>Email:</label>
+    <input type="email" id="email" required><br><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <h2>All Users</h2>
+  <div id="userList"></div>
+
+<script>
+  // Fetch and show all users
+  async function loadUsers() {
+    const response = await fetch("/users");
+    const users = await response.json();
+
+    let list = "";
+    users.forEach(user => {
+      list += `
+        <p>
+          ${user.username} - ${user.phone} - ${user.email}
+          <button onclick="editUser(${user.id}, '${user.username}', '${user.phone}', '${user.email}')">Edit</button>
+          <button onclick="deleteUser(${user.id})">Delete</button>
+        </p>
+      `;
+    });
+
+    document.getElementById("userList").innerHTML = list;
+  }
+
+  // Handle form submit (Create + Update both)
+  document.getElementById("userForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const id = document.getElementById("editId").value; // hidden field
+    const userData = {
+      username: document.getElementById("username").value,
+      phone: document.getElementById("phone").value,
+      email: document.getElementById("email").value
+    };
+
+    // If ID exists -> update, otherwise it will create new
+    const url = id ? `/users/${id}` : "/users";
+    const method = id ? "PUT" : "POST";
+
+    await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData)
+    });
+
+    e.target.reset();
+    document.getElementById("editId").value = "";
+    loadUsers();
+  });
+
+  // Fill form for editing
+  function editUser(id, name, phone, email) {
+    document.getElementById("editId").value = id;
+    document.getElementById("username").value = name;
+    document.getElementById("phone").value = phone;
+    document.getElementById("email").value = email;
+  }
+
+  // Delete user by ID
+  async function deleteUser(id) {
+    await fetch(`/users/${id}`, { method: "DELETE" });
+    loadUsers();
+  }
+
+  // Initial load for existing data
+  loadUsers();
+</script>
+
+</body>
+</html>
